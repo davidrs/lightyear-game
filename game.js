@@ -357,15 +357,26 @@ class EndlessRangerScene extends Phaser.Scene {
     powerAura.setVisible(false);
 
     const jetGlow = this.add.graphics();
-    jetGlow.fillStyle(0xffd25c, 0.95);
-    jetGlow.fillTriangle(-14, 94, -4, 48, 6, 94);
-    jetGlow.fillTriangle(14, 94, 4, 48, -6, 94);
+    this.jetIsBlue = false;
+    this.drawJetGlow(false, jetGlow);
 
     ranger.add([powerAura, jetGlow, rangerBody]);
     this.ranger = ranger;
     this.powerAura = powerAura;
     this.jetGlow = jetGlow;
     this.rangerVelocityY = 0;
+  }
+
+  drawJetGlow(isBlue, target = this.jetGlow) {
+    if (!target) {
+      return;
+    }
+
+    const glowColor = isBlue ? 0x65d8ff : 0xffd25c;
+    target.clear();
+    target.fillStyle(glowColor, 0.95);
+    target.fillTriangle(-14, 94, -4, 48, 6, 94);
+    target.fillTriangle(14, 94, 4, 48, -6, 94);
   }
 
   createRangerBody() {
@@ -580,6 +591,12 @@ class EndlessRangerScene extends Phaser.Scene {
   updateRanger(deltaSeconds, superActive) {
     const boosting =
       this.isBoosting || this.spaceKey.isDown || this.upKey.isDown || this.isGamepadBoostPressed();
+
+    if (this.jetIsBlue !== superActive) {
+      this.jetIsBlue = superActive;
+      this.drawJetGlow(superActive);
+    }
+
     const maxRise = superActive ? SUPER_MAX_RISE : BASE_MAX_RISE;
     if (boosting) {
       this.rangerVelocityY -= BOOST_ACCELERATION * deltaSeconds;
