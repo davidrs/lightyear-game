@@ -53,3 +53,7 @@ http://localhost:8000
 
 Background tile licensing details are in:
 `assets/backgrounds/SPACE_TILE_LICENSE.txt`
+
+Ground dinosaur sprites are from Twemoji (open source, CC-BY 4.0):
+- https://github.com/twitter/twemoji/blob/master/assets/72x72/1f996.png
+- https://github.com/twitter/twemoji/blob/master/assets/72x72/1f995.png

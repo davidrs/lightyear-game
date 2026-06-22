@@ -20,6 +20,12 @@ window.GAME_CONSTANTS = {
   STAR_DING_KEY: "star-ding",
   STAR_DING_URL: "./assets/audio/star-ding.wav",
   STAR_DING_VOLUME: 0.36,
+  DINO_TREX_KEY: "dino-trex",
+  DINO_TREX_URL: "./assets/dinos/trex.png",
+  DINO_SAUROPOD_KEY: "dino-sauropod",
+  DINO_SAUROPOD_URL: "./assets/dinos/sauropod.png",
+  DINO_MIN_SPACING: 520,
+  DINO_MAX_SPACING: 1320,
   BUZZ_WALK_FRAMES: [
     { x: 8, y: 14, w: 46, h: 78 },
     { x: 70, y: 14, w: 48, h: 78 },

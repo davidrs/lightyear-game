@@ -20,6 +20,12 @@ const {
   STAR_DING_KEY = "star-ding",
   STAR_DING_URL = "./assets/audio/star-ding.wav",
   STAR_DING_VOLUME = 0.36,
+  DINO_TREX_KEY = "dino-trex",
+  DINO_TREX_URL = "./assets/dinos/trex.png",
+  DINO_SAUROPOD_KEY = "dino-sauropod",
+  DINO_SAUROPOD_URL = "./assets/dinos/sauropod.png",
+  DINO_MIN_SPACING = 520,
+  DINO_MAX_SPACING = 1320,
   BUZZ_WALK_FRAMES = [
     { x: 8, y: 14, w: 46, h: 78 },
     { x: 70, y: 14, w: 48, h: 78 },
@@ -50,6 +56,8 @@ class EndlessRangerScene extends Phaser.Scene {
     this.highScore = 0;
     this.superTimer = 0;
     this.stars = [];
+    this.dinos = [];
+    this.dinoSpawnCursor = 0;
     this.clouds = [];
     this.hills = [];
     this.isBoosting = false;
@@ -62,6 +70,8 @@ class EndlessRangerScene extends Phaser.Scene {
   preload() {
     this.load.image(BUZZ_SHEET_KEY, BUZZ_SHEET_URL);
     this.load.image(SPACE_TILE_KEY, SPACE_TILE_URL);
+    this.load.image(DINO_TREX_KEY, DINO_TREX_URL);
+    this.load.image(DINO_SAUROPOD_KEY, DINO_SAUROPOD_URL);
     this.load.audio(AMBIENT_MUSIC_KEY, AMBIENT_MUSIC_URL);
     this.load.audio(STAR_DING_KEY, STAR_DING_URL);
   }
@@ -76,7 +86,9 @@ class EndlessRangerScene extends Phaser.Scene {
     this.createInput();
     this.setupAmbientMusic();
     this.spawnCursor = 420;
+    this.dinoSpawnCursor = 520;
     this.ensureStarsAhead();
+    this.ensureDinosAhead();
     this.refreshHud();
   }
 
@@ -552,6 +564,26 @@ class EndlessRangerScene extends Phaser.Scene {
     this.stars.push(star);
   }
 
+  ensureDinosAhead() {
+    while (this.dinoSpawnCursor < this.scrollDistance + GAME_WIDTH + 420) {
+      this.dinoSpawnCursor += Phaser.Math.Between(DINO_MIN_SPACING, DINO_MAX_SPACING);
+      this.createGroundDino(this.dinoSpawnCursor);
+    }
+  }
+
+  createGroundDino(worldX) {
+    const dinoKey = Phaser.Math.Between(0, 1) === 0 ? DINO_TREX_KEY : DINO_SAUROPOD_KEY;
+    const dino = this.add.image(worldX - this.scrollDistance, Phaser.Math.Between(448, 488), dinoKey);
+    dino.setOrigin(0.5, 1);
+    dino.setScale(Phaser.Math.FloatBetween(0.7, 1.05));
+    dino.setAlpha(0.9);
+    dino.setFlipX(Phaser.Math.Between(0, 1) === 1);
+    dino.setData("worldX", worldX);
+    dino.setData("baseY", dino.y);
+    dino.setData("bobSeed", Phaser.Math.FloatBetween(0, Math.PI * 2));
+    this.dinos.push(dino);
+  }
+
   update(time, delta) {
     const deltaSeconds = delta / 1000;
     const superActive = this.superTimer > 0;
@@ -564,9 +596,29 @@ class EndlessRangerScene extends Phaser.Scene {
       this.updateGamepadSummary();
     }
     this.ensureStarsAhead();
+    this.ensureDinosAhead();
     this.updateStars(time, deltaSeconds, superActive);
+    this.updateDinos(time);
     this.updateSuperState(delta);
     this.refreshHud();
+  }
+
+  updateDinos(time) {
+    const survivors = [];
+    for (const dino of this.dinos) {
+      const worldX = dino.getData("worldX");
+      const baseY = dino.getData("baseY");
+      const bobSeed = dino.getData("bobSeed");
+      dino.x = worldX - this.scrollDistance;
+      dino.y = baseY + Math.sin(time / 330 + bobSeed) * 2.5;
+
+      if (dino.x < -120) {
+        dino.destroy();
+        continue;
+      }
+      survivors.push(dino);
+    }
+    this.dinos = survivors;
   }
 
   updateBackground(deltaSeconds) {
@@ -600,12 +652,8 @@ class EndlessRangerScene extends Phaser.Scene {
     const maxRise = superActive ? SUPER_MAX_RISE : BASE_MAX_RISE;
     if (boosting) {
       this.rangerVelocityY -= BOOST_ACCELERATION * deltaSeconds;
-      this.jetGlow.setScale(1, superActive ? 1.35 : 1.1);
-      this.jetGlow.setAlpha(superActive ? 1 : 0.85);
     } else {
       this.rangerVelocityY += GRAVITY * deltaSeconds;
-      this.jetGlow.setScale(1, 0.74);
-      this.jetGlow.setAlpha(0.45);
     }
 
     if (this.rangerBody) {
@@ -633,6 +681,14 @@ class EndlessRangerScene extends Phaser.Scene {
       this.ranger.y = 372;
       this.rangerVelocityY = Math.min(-120, this.rangerVelocityY * -0.42);
       this.starBurst(this.ranger.x - 10, 420, 4, 0x92e085);
+    }
+
+    if (boosting) {
+      this.jetGlow.setScale(1, superActive ? 1.35 : 1.1);
+      this.jetGlow.setAlpha(superActive ? 1 : 0.85);
+    } else {
+      this.jetGlow.setScale(1, 0.68);
+      this.jetGlow.setAlpha(0);
     }
 
     this.ranger.rotation = Phaser.Math.Clamp(this.rangerVelocityY / 720, -0.32, 0.32);
